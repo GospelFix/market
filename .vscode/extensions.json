@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "Natizyskunk.sftp",
+    "streetsidesoftware.code-spell-checker", // 오타 감지 (선택)
+    "formulahendry.auto-close-tag", // 태그 자동 닫기 (HTML/XML)
+    "formulahendry.auto-rename-tag" // 태그명 수정 시 짝도 같이 수정]
+  ]
+}

@@ -1,11 +1,12 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { XCircle } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 
-export default function PaymentFailPage() {
+function PaymentFailContent() {
   const searchParams = useSearchParams()
   const message = searchParams.get('message') ?? '결제가 취소되었습니다.'
 
@@ -28,5 +29,13 @@ export default function PaymentFailPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+export default function PaymentFailPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center" />}>
+      <PaymentFailContent />
+    </Suspense>
   )
 }

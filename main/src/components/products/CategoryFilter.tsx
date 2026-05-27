@@ -19,7 +19,8 @@ export function CategoryFilter({ currentCategory }: CategoryFilterProps) {
     } else {
       params.set('category', value)
     }
-    router.push(`/templates?${params.toString()}`)
+    const qs = params.toString()
+    router.push(qs ? `/main?${qs}` : '/main')
   }
 
   return (

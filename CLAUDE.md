@@ -49,7 +49,7 @@ src/app/
 ├── login/            # /login — 인증 상태면 /dashboard 리다이렉트 (미들웨어 처리)
 ├── register/         # /register — 인증 상태면 /dashboard 리다이렉트 (미들웨어 처리)
 ├── (dashboard)/      # /dashboard — 비인증 시 /login 리다이렉트
-├── (public)/         # /templates, /templates/[slug] — 공개 접근
+├── (public)/         # /main, /main/[slug] — 공개 접근
 ├── api/
 │   ├── orders/create/    # 주문 생성 API
 │   └── payments/confirm/ # Toss Payments 결제 승인 API (멱등성 보장)

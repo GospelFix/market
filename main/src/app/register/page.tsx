@@ -23,7 +23,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/templates`,
+        emailRedirectTo: `${window.location.origin}/main`,
       },
     });
 
@@ -124,7 +124,7 @@ export default function RegisterPage() {
 
         <div className="mt-4 text-center">
           <Link
-            href="/templates"
+            href='/main'
             className="text-sm text-muted-foreground underline-offset-4 hover:underline"
           >
             ← 템플릿 둘러보기

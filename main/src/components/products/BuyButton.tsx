@@ -24,7 +24,7 @@ export function BuyButton({ productId, productSlug, productName, price }: BuyBut
 
   async function handleClick() {
     if (!isAuthenticated || !user) {
-      router.push(`/login?next=/templates/${productSlug}`)
+      router.push(`/login?next=/main/${productSlug}`)
       return
     }
 

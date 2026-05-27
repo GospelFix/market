@@ -18,7 +18,7 @@ function PaymentFailContent() {
         <p className="mt-2 text-muted-foreground">{message}</p>
       </div>
       <div className="flex gap-3">
-        <Link href="/templates" className={buttonVariants({ variant: 'outline' })}>
+        <Link href='/main' className={buttonVariants({ variant: 'outline' })}>
           템플릿 목록으로
         </Link>
         <button

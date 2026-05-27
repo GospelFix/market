@@ -10,8 +10,8 @@ import { buttonVariants } from '@/components/ui/button'
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const rawNext = searchParams.get('next') ?? '/templates'
-  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/templates'
+  const rawNext = searchParams.get('next') ?? '/main'
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/main'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -93,7 +93,7 @@ function LoginContent() {
 
         <div className="mt-4 text-center">
           <Link
-            href="/templates"
+            href='/main'
             className="text-sm text-muted-foreground underline-offset-4 hover:underline"
           >
             ← 템플릿 둘러보기

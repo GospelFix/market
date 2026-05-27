@@ -60,7 +60,7 @@ function PaymentSuccessContent() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
         <p className="text-destructive">{error}</p>
-        <Link href="/templates" className={buttonVariants({ variant: 'outline' })}>
+        <Link href='/main' className={buttonVariants({ variant: 'outline' })}>
           템플릿 목록으로
         </Link>
       </div>
@@ -86,7 +86,7 @@ function PaymentSuccessContent() {
           파일 다운로드
         </a>
       )}
-      <Link href="/templates" className={buttonVariants({ variant: 'ghost' })}>
+      <Link href='/main' className={buttonVariants({ variant: 'ghost' })}>
         템플릿 목록으로 돌아가기
       </Link>
     </div>

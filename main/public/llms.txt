@@ -1,0 +1,61 @@
+# GospelFix Market
+
+> 바로 사용 가능한 고품질 웹 템플릿 마켓플레이스. 랜딩페이지, 대시보드, 이커머스, 포트폴리오, 블로그 등 다양한 카테고리의 Next.js 기반 템플릿을 구매하고 즉시 다운로드할 수 있습니다.
+
+## 서비스 개요
+
+- **서비스 URL**: https://market-lime-kappa.vercel.app
+- **기술 스택**: Next.js 14 (App Router) · Supabase · Toss Payments · Tailwind CSS · shadcn/ui
+- **인증**: Supabase 이메일/비밀번호 인증
+- **결제**: Toss Payments (카카오페이, 카드 등)
+
+## 주요 페이지
+
+- `/` — 루트 진입 시 `/main`으로 자동 리다이렉트
+- `/main` — 템플릿 갤러리 (카테고리 필터: 전체·랜딩페이지·대시보드·이커머스·포트폴리오·블로그)
+- `/main/[slug]` — 템플릿 상세 페이지 (데모 iframe, 포함 항목, 구매 버튼)
+- `/login` — 로그인
+- `/register` — 회원가입
+- `/dashboard` — 사용자 대시보드 (인증 필요)
+- `/payments/success` — 결제 성공 후 파일 다운로드
+- `/payments/fail` — 결제 실패/취소
+
+## API 엔드포인트
+
+- `POST /api/orders/create` — 주문 생성 (인증 필요)
+- `POST /api/payments/confirm` — Toss Payments 결제 승인 (멱등성 보장)
+
+## 템플릿 카테고리
+
+| 카테고리 | 설명 |
+|----------|------|
+| landing | 랜딩페이지 템플릿 |
+| dashboard | 관리자/데이터 대시보드 |
+| ecommerce | 쇼핑몰·커머스 |
+| portfolio | 개인 포트폴리오 |
+| blog | 블로그·콘텐츠 |
+
+## 결제 흐름
+
+1. 상품 상세 페이지에서 구매 버튼 클릭
+2. 미로그인 시 `/login?next=/main/[slug]`로 리다이렉트 후 복귀
+3. `POST /api/orders/create` — Supabase에 주문 레코드 생성 (status: pending)
+4. Toss Payments SDK 결제창 호출
+5. 결제 완료 후 `/payments/success?paymentKey=...&orderId=...&amount=...`로 리다이렉트
+6. `POST /api/payments/confirm` — 서버에서 Toss 승인 및 다운로드 URL 발급
+7. Supabase Storage 서명 URL로 파일 다운로드
+
+## 데이터 모델
+
+### products 테이블
+- `id`, `slug`, `name`, `description`, `category`, `price`
+- `thumbnail_url`, `demo_url`, `includes` (string[]), `file_path`, `is_active`
+
+### orders 테이블
+- `order_id`, `user_id`, `product_id`, `amount`
+- `status`: `pending` → `confirming` → `paid`
+- `payment_key`, `download_url`, `paid_at`
+
+### profiles 테이블
+- `id` (auth.users 참조), `email`, `full_name`, `avatar_url`
+- `role`: `user` | `admin`

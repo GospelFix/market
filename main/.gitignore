@@ -28,6 +28,9 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# 실서버 환경변수 — 라이브 키 포함, 절대 커밋 금지
+.env.production
+
 # vercel
 .vercel
 

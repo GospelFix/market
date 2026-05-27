@@ -65,7 +65,7 @@ export default async function NewProductPage() {
             name="includes"
             rows={4}
             style={inputStyle}
-            placeholder={'HTML 파일\nCSS 파일\nFigma 소스'}
+            placeholder={'AI Agent 탑재\n쇼핑몰/홈페이지 제작 (헬스, 요가, 필라테스 등)\nVercel 배포 포함\n도메인 연결 지원\n모바일 반응형\n1개월 무료 수정'}
           />
         </div>
         <Field label="Storage 파일 경로" name="file_path" placeholder="templates/filename.zip" />

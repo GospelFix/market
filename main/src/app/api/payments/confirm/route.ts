@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { confirmTossPayment } from "@/lib/toss/payments";
-import { createSignedDownloadUrl } from "@/lib/supabase/storage";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,7 +37,7 @@ export async function POST(request: NextRequest) {
     // DB에서 주문 정보 조회 (status 필터 없이)
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("*, products(file_path)")
+      .select("*")
       .eq("order_id", orderId)
       .eq("user_id", user.id)
       .single();
@@ -57,11 +56,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 이미 결제 완료된 주문 — URL을 새로 생성해 반환 (만료 대응)
+    // 이미 결제 완료된 주문
     if (order.status === "paid") {
-      const filePath = order.products?.file_path;
-      const freshUrl = filePath ? await createSignedDownloadUrl(filePath) : null;
-      return NextResponse.json({ success: true, downloadUrl: freshUrl });
+      return NextResponse.json({ success: true });
+    }
+
+    // Toss 승인 요청 중 — 잠시 후 재시도 유도
+    if (order.status === "confirming") {
+      return NextResponse.json(
+        { error: "결제가 처리 중입니다. 잠시 후 다시 시도해주세요." },
+        { status: 202 },
+      );
     }
 
     // 중복 호출 방어: pending → confirming 으로 원자적 상태 변경
@@ -91,20 +96,12 @@ export async function POST(request: NextRequest) {
       throw tossError;
     }
 
-    // Storage 서명 URL 생성
-    const filePath = order.products?.file_path;
-    let downloadUrl: string | null = null;
-    if (filePath) {
-      downloadUrl = await createSignedDownloadUrl(filePath);
-    }
-
-    // orders 테이블 업데이트
+    // Toss 승인 성공 즉시 paid로 업데이트 (추가 작업과 분리)
     const { error: updateError } = await supabase
       .from("orders")
       .update({
         payment_key: paymentKey,
         status: "paid",
-        download_url: downloadUrl,
         paid_at: new Date().toISOString(),
       })
       .eq("order_id", orderId)
@@ -113,12 +110,16 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       console.error("[payments/confirm] CRITICAL: Toss 승인 후 DB 업데이트 실패", {
         orderId,
-        paymentKey,
+        paymentKey: paymentKey.slice(0, 8) + "****",
         error: updateError,
       });
+      return NextResponse.json(
+        { error: "결제는 완료되었으나 내부 처리 중 오류가 발생했습니다. 고객센터로 문의해주세요." },
+        { status: 500 },
+      );
     }
 
-    return NextResponse.json({ success: true, downloadUrl });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[payments/confirm] 결제 처리 오류:", error);
     return NextResponse.json(

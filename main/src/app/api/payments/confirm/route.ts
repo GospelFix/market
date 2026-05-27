@@ -14,6 +14,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (typeof amount !== "number" || amount <= 0) {
+      return NextResponse.json(
+        { error: "유효하지 않은 결제 금액입니다." },
+        { status: 400 },
+      );
+    }
+
     const supabase = await createClient();
 
     // 인증된 사용자 확인
@@ -28,13 +35,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // DB에서 주문 정보 조회 및 금액 검증
+    // DB에서 주문 정보 조회 (status 필터 없이)
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .select("*, products(file_path)")
       .eq("order_id", orderId)
       .eq("user_id", user.id)
-      .eq("status", "pending")
       .single();
 
     if (orderError || !order) {
@@ -51,13 +57,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 이미 결제 완료된 주문 — URL을 새로 생성해 반환 (만료 대응)
+    if (order.status === "paid") {
+      const filePath = order.products?.file_path;
+      const freshUrl = filePath ? await createSignedDownloadUrl(filePath) : null;
+      return NextResponse.json({ success: true, downloadUrl: freshUrl });
+    }
+
     // 중복 호출 방어: pending → confirming 으로 원자적 상태 변경
     const { data: locked } = await supabase
       .from("orders")
       .update({ status: "confirming" })
       .eq("order_id", orderId)
       .eq("status", "pending")
-      .select("id");
+      .select("order_id");
 
     if (!locked || locked.length === 0) {
       return NextResponse.json(
@@ -66,8 +79,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Toss 서버 결제 승인
-    await confirmTossPayment({ paymentKey, orderId, amount });
+    // Toss 서버 결제 승인 — 실패 시 pending으로 복구
+    try {
+      await confirmTossPayment({ paymentKey, orderId, amount });
+    } catch (tossError) {
+      await supabase
+        .from("orders")
+        .update({ status: "pending" })
+        .eq("order_id", orderId)
+        .eq("status", "confirming");
+      throw tossError;
+    }
 
     // Storage 서명 URL 생성
     const filePath = order.products?.file_path;
@@ -77,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     // orders 테이블 업데이트
-    await supabase
+    const { error: updateError } = await supabase
       .from("orders")
       .update({
         payment_key: paymentKey,
@@ -85,14 +107,23 @@ export async function POST(request: NextRequest) {
         download_url: downloadUrl,
         paid_at: new Date().toISOString(),
       })
-      .eq("order_id", orderId);
+      .eq("order_id", orderId)
+      .eq("status", "confirming");
+
+    if (updateError) {
+      console.error("[payments/confirm] CRITICAL: Toss 승인 후 DB 업데이트 실패", {
+        orderId,
+        paymentKey,
+        error: updateError,
+      });
+    }
 
     return NextResponse.json({ success: true, downloadUrl });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "결제 처리 중 오류가 발생했습니다.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[payments/confirm] 결제 처리 오류:", error);
+    return NextResponse.json(
+      { error: "결제 처리 중 오류가 발생했습니다." },
+      { status: 500 },
+    );
   }
 }
